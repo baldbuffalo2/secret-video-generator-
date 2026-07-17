@@ -76,22 +76,22 @@
 <body>
     <div class="container">
         <h1>Video Clothes Remover</h1>
-        <p>Upload a short video (3-10 seconds recommended) using Samsung My Files</p>
+        <p>Upload a short video (3-10 seconds) — uses Samsung My Files picker</p>
         
         <div class="warning">
             <strong>⚠️ Important:</strong><br>
             Only use videos you own or have explicit consent for.<br>
-            Non-consensual use is illegal. Free tier supports short clips only.
+            Non-consensual use is illegal. Free tier = short clips only.
         </div>
 
         <div class="instructions">
-            On Samsung devices: Tap below → Choose <strong>My Files</strong> → Select your video
+            On Samsung: Tap below → Choose <strong>My Files</strong> (not Photos) → Select video
         </div>
 
-        <!-- File Picker Area -->
+        <!-- File Picker -->
         <div id="dropZone" class="drop-zone">
-            <p>📱 Tap here to open Samsung My Files<br>or drag & drop on desktop</p>
-            <input type="file" id="videoInput" accept="video/mp4,video/quicktime,video/*" style="display: none;">
+            <p>📱 Tap to open Samsung My Files<br>or drag & drop</p>
+            <input type="file" id="videoInput" accept="video/*,application/octet-stream" style="display: none;">
         </div>
 
         <button onclick="processVideo()">🚀 Remove Clothing</button>
@@ -101,7 +101,7 @@
         <video id="outputVideo" controls style="display: none;"></video>
         
         <p style="margin-top: 30px; font-size: 14px;">
-            After removal, download the base video and add your custom clothes manually.
+            After removal, download the base video and add custom clothing manually.
         </p>
     </div>
 
@@ -110,7 +110,6 @@
         const fileInput = document.getElementById('videoInput');
         let selectedFile = null;
 
-        // Open file picker (triggers Samsung My Files on mobile)
         dropZone.addEventListener('click', () => fileInput.click());
 
         fileInput.addEventListener('change', (e) => {
@@ -120,11 +119,8 @@
             }
         });
 
-        // Drag & Drop (desktop)
-        dropZone.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            dropZone.classList.add('dragover');
-        });
+        // Drag & Drop support
+        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
         dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
         dropZone.addEventListener('drop', (e) => {
             e.preventDefault();
@@ -137,12 +133,12 @@
 
         async function processVideo() {
             if (!selectedFile) {
-                alert("Please select a video using Samsung My Files first");
+                alert("Please select a video using My Files first");
                 return;
             }
 
             const status = document.getElementById('status');
-            status.textContent = "Uploading to free API... (may take 1-3 minutes for short clips)";
+            status.textContent = "Processing with free API... (short clips only)";
 
             const formData = new FormData();
             formData.append('video', selectedFile);
@@ -153,9 +149,7 @@
                     body: formData
                 });
 
-                if (!response.ok) {
-                    throw new Error(`Error ${response.status} — try a shorter clip or wait`);
-                }
+                if (!response.ok) throw new Error(`Error ${response.status} — try shorter clip`);
 
                 const result = await response.json();
                 const videoUrl = result.output_url || result.video_url || result.url;
@@ -164,16 +158,16 @@
                     const output = document.getElementById('outputVideo');
                     output.src = videoUrl;
                     output.style.display = 'block';
-                    status.textContent = "✅ Done! Download the undressed video.";
+                    status.textContent = "✅ Done!";
                 } else {
-                    throw new Error("No output video returned");
+                    throw new Error("No output video");
                 }
             } catch (error) {
                 status.textContent = "❌ " + error.message;
             }
         }
 
-        // Reset on new selection
+        // Reset output
         fileInput.addEventListener('change', () => {
             document.getElementById('outputVideo').style.display = 'none';
         });
