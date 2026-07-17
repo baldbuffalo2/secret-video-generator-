@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Video Clothes Remover</title>
+  <style>
+    body { font-family: Arial; text-align: center; padding: 50px; background: #f0f0f0; }
+    input, button { padding: 10px; margin: 10px; }
+    #status { margin: 20px; color: blue; }
+  </style>
+</head>
+<body>
+  <h1>Upload Video for Clothes Removal</h1>
+  <p>Short clips recommended (5-20s). Uses your image undress tech via API.</p>
+  
+  <input type="file" id="videoInput" accept="video/mp4,video/mov">
+  <br>
+  <button onclick="processVideo()">Remove Clothing</button>
+  
+  <div id="status"></div>
+  <video id="outputVideo" controls style="max-width: 80%; display: none;"></video>
+
+  <script>
+    async function processVideo() {
+      const file = document.getElementById('videoInput').files[0];
+      if (!file) return alert("Select a video");
+      
+      const status = document.getElementById('status');
+      status.textContent = "Uploading and processing... (this can take minutes)";
+
+      const formData = new FormData();
+      formData.append('video', file);
+
+      try {
+        // Replace with a real video undress API endpoint + key
+        const response = await fetch('https://api.example-undress.com/v1/video/undress', {
+          method: 'POST',
+          headers: { 'Authorization': 'Bearer YOUR_API_KEY_HERE' },
+          body: formData
+        });
+
+        if (!response.ok) throw new Error("API error");
+
+        const result = await response.json();
+        const videoUrl = result.output_url; // Adjust based on API response
+
+        const output = document.getElementById('outputVideo');
+        output.src = videoUrl;
+        output.style.display = 'block';
+        status.textContent = "Done! Download the video below.";
+      } catch (e) {
+        status.textContent = "Error: " + e.message + ". Try a shorter clip or different API.";
+      }
+    }
+  </script>
+</body>
+</html>
