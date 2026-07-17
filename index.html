@@ -1,57 +1,133 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Video Clothes Remover</title>
-  <style>
-    body { font-family: Arial; text-align: center; padding: 50px; background: #f0f0f0; }
-    input, button { padding: 10px; margin: 10px; }
-    #status { margin: 20px; color: blue; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Clothes Remover</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 40px;
+            background: #f4f4f4;
+            color: #333;
+        }
+        h1 { color: #d32f2f; }
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        input, button {
+            padding: 12px;
+            margin: 10px;
+            font-size: 16px;
+        }
+        button {
+            background: #d32f2f;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        button:hover { background: #b71c1c; }
+        #status {
+            margin: 20px 0;
+            font-weight: bold;
+            min-height: 24px;
+        }
+        video {
+            max-width: 100%;
+            margin-top: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .warning {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 20px 0;
+            font-size: 14px;
+        }
+    </style>
 </head>
 <body>
-  <h1>Upload Video for Clothes Removal</h1>
-  <p>Short clips recommended (5-20s). Uses your image undress tech via API.</p>
-  
-  <input type="file" id="videoInput" accept="video/mp4,video/mov">
-  <br>
-  <button onclick="processVideo()">Remove Clothing</button>
-  
-  <div id="status"></div>
-  <video id="outputVideo" controls style="max-width: 80%; display: none;"></video>
+    <div class="container">
+        <h1>Video Clothes Remover</h1>
+        <p>Upload a short video (3-10 seconds recommended). Uses image undress technology adapted for video.</p>
+        
+        <div class="warning">
+            <strong>⚠️ Important:</strong><br>
+            Only use videos you own or have explicit consent for.<br>
+            Non-consensual use is illegal. Short clips only on free tier.
+        </div>
 
-  <script>
-    async function processVideo() {
-      const file = document.getElementById('videoInput').files[0];
-      if (!file) return alert("Select a video");
-      
-      const status = document.getElementById('status');
-      status.textContent = "Uploading and processing... (this can take minutes)";
+        <input type="file" id="videoInput" accept="video/mp4,video/quicktime" />
+        <br>
+        <button onclick="processVideo()">Remove Clothing</button>
+        
+        <div id="status"></div>
+        
+        <video id="outputVideo" controls style="display: none;"></video>
+        
+        <p style="margin-top: 30px; font-size: 14px;">
+            After processing, download the undressed base video and add your custom clothing manually (CapCut, DaVinci Resolve, etc.).
+        </p>
+    </div>
 
-      const formData = new FormData();
-      formData.append('video', file);
+    <script>
+        async function processVideo() {
+            const file = document.getElementById('videoInput').files[0];
+            if (!file) {
+                alert("Please select a video file (short clip recommended)");
+                return;
+            }
 
-      try {
-        // Replace with a real video undress API endpoint + key
-        const response = await fetch('https://api.example-undress.com/v1/video/undress', {
-          method: 'POST',
-          headers: { 'Authorization': 'Bearer YOUR_API_KEY_HERE' },
-          body: formData
+            const status = document.getElementById('status');
+            status.textContent = "Uploading and processing... (free tier may take time)";
+
+            const formData = new FormData();
+            formData.append('video', file);  // Main video file
+            // Optional params (check https://public-api.undresstool.fun/docs for exact fields)
+            // formData.append('body_type', 'average'); // or other supported enums
+
+            try {
+                const response = await fetch('https://public-api.undresstool.fun/api/v1/video/undress', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status} (rate limit or server issue)`);
+                }
+
+                const result = await response.json();
+                
+                // Adjust these based on actual response structure from their Swagger/docs
+                const videoUrl = result.output_url || result.video_url || result.url;
+                
+                if (videoUrl) {
+                    const outputVideo = document.getElementById('outputVideo');
+                    outputVideo.src = videoUrl;
+                    outputVideo.style.display = 'block';
+                    status.textContent = "✅ Processing complete! Download the video below.";
+                } else {
+                    throw new Error("No output URL in response");
+                }
+            } catch (error) {
+                console.error(error);
+                status.textContent = "❌ Error: " + error.message + ". Try a shorter clip or wait a minute (free tier limits).";
+            }
+        }
+
+        // Optional: Clear previous output on new file select
+        document.getElementById('videoInput').addEventListener('change', () => {
+            document.getElementById('outputVideo').style.display = 'none';
+            document.getElementById('status').textContent = '';
         });
-
-        if (!response.ok) throw new Error("API error");
-
-        const result = await response.json();
-        const videoUrl = result.output_url; // Adjust based on API response
-
-        const output = document.getElementById('outputVideo');
-        output.src = videoUrl;
-        output.style.display = 'block';
-        status.textContent = "Done! Download the video below.";
-      } catch (e) {
-        status.textContent = "Error: " + e.message + ". Try a shorter clip or different API.";
-      }
-    }
-  </script>
+    </script>
 </body>
 </html>
