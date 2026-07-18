@@ -53,7 +53,7 @@
 <body>
     <div class="container">
         <h1>Video Clothes Remover</h1>
-        <p>Your 5-second clip is perfect for the free tier</p>
+        <p>Your 5-second clip is perfect</p>
         
         <div class="warning">
             <strong>⚠️ Important:</strong><br>
@@ -62,8 +62,8 @@
         </div>
 
         <div id="dropZone" class="drop-zone">
-            <p>📁 Drag & Drop your video here<br>or tap to browse files</p>
-            <input type="file" id="videoInput" accept="video/*" style="display: none;">
+            <p>📁 Tap to browse files (My Files)<br>or drag & drop</p>
+            <input type="file" id="videoInput" accept="video/*,application/octet-stream" style="display: none;">
         </div>
 
         <button onclick="processVideo()">Remove Clothing</button>
@@ -72,7 +72,7 @@
         <video id="outputVideo" controls style="display: none;"></video>
         
         <p style="margin-top: 30px; font-size: 14px;">
-            After getting the undressed video, add your custom clothing in CapCut or similar.
+            After removal, download the base video and add custom clothing manually.
         </p>
     </div>
 
@@ -81,7 +81,6 @@
         const fileInput = document.getElementById('videoInput');
         let selectedFile = null;
 
-        // Click to open file picker
         dropZone.addEventListener('click', () => fileInput.click());
 
         fileInput.addEventListener('change', (e) => {
@@ -91,16 +90,59 @@
             }
         });
 
-        // Drag and Drop support
         dropZone.addEventListener('dragover', (e) => {
             e.preventDefault();
             dropZone.classList.add('dragover');
         });
-        dropZone.addEventListener('dragleave', () => {
-            dropZone.classList.remove('dragover');
-        });
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
         dropZone.addEventListener('drop', (e) => {
             e.preventDefault();
             dropZone.classList.remove('dragover');
             if (e.dataTransfer.files.length > 0) {
-                selected
+                selectedFile = e.dataTransfer.files[0];
+                dropZone.innerHTML = `<p>✅ Selected: ${selectedFile.name}</p>`;
+            }
+        });
+
+        async function processVideo() {
+            if (!selectedFile) {
+                alert("Please select a video first");
+                return;
+            }
+
+            const status = document.getElementById('status');
+            status.textContent = "Uploading to free API...";
+
+            const formData = new FormData();
+            formData.append('video', selectedFile);
+
+            try {
+                const response = await fetch('https://public-api.undresstool.fun/api/v1/video/undress', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    const errText = await response.text().catch(() => "Unknown error");
+                    throw new Error(`API Error ${response.status}: ${errText}`);
+                }
+
+                const result = await response.json();
+                const videoUrl = result.output_url || result.video_url || result.url || result.data?.url;
+
+                if (videoUrl) {
+                    const output = document.getElementById('outputVideo');
+                    output.src = videoUrl;
+                    output.style.display = 'block';
+                    status.textContent = "✅ Done! Download the undressed video.";
+                } else {
+                    throw new Error("No output URL received");
+                }
+            } catch (error) {
+                console.error(error);
+                status.textContent = "❌ " + error.message + "\n\nTry again with your 5s clip.";
+            }
+        }
+    </script>
+</body>
+</html>
