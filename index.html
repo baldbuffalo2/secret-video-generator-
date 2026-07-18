@@ -5,29 +5,65 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Video Clothes Remover</title>
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; padding: 20px; background: #f4f4f4; margin: 0; }
-        .container { max-width: 700px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        .drop-zone { border: 3px dashed #d32f2f; border-radius: 12px; padding: 50px 20px; margin: 20px 0; cursor: pointer; transition: all 0.3s; }
-        .drop-zone:hover, .drop-zone.dragover { background: #ffebee; border-color: #b71c1c; }
-        button { background: #d32f2f; color: white; border: none; padding: 16px 32px; font-size: 18px; border-radius: 8px; cursor: pointer; width: 100%; max-width: 400px; }
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
+            background: #f4f4f4;
+            margin: 0;
+        }
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .drop-zone {
+            border: 3px dashed #d32f2f;
+            border-radius: 12px;
+            padding: 50px 20px;
+            margin: 20px 0;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 18px;
+        }
+        .drop-zone:hover, .drop-zone.dragover {
+            background: #ffebee;
+            border-color: #b71c1c;
+        }
+        button {
+            background: #d32f2f;
+            color: white;
+            border: none;
+            padding: 16px 32px;
+            font-size: 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            max-width: 400px;
+        }
         button:hover { background: #b71c1c; }
         #status { margin: 20px 0; font-weight: bold; min-height: 28px; color: #d32f2f; white-space: pre-wrap; }
         video { max-width: 100%; margin-top: 20px; border: 1px solid #ddd; border-radius: 8px; }
         .warning { background: #fff3cd; padding: 15px; border-radius: 6px; margin: 20px 0; text-align: left; font-size: 14px; }
+        .links { margin-top: 30px; text-align: left; }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Video Clothes Remover</h1>
-        <p>Your 5s clip is ideal for testing</p>
+        <p>Your 5-second clip is perfect</p>
         
         <div class="warning">
-            <strong>⚠️ Only use content you own / have consent for.</strong><br>
+            <strong>⚠️ Important:</strong><br>
+            Only use videos you own or have explicit consent for.<br>
             Non-consensual use is illegal.
         </div>
 
         <div id="dropZone" class="drop-zone">
-            <p>📁 Tap or drag your video here</p>
+            <p>📁 Drag & Drop your video here<br>or tap to browse files</p>
             <input type="file" id="videoInput" accept="video/*" style="display: none;">
         </div>
 
@@ -35,6 +71,15 @@
         
         <div id="status"></div>
         <video id="outputVideo" controls style="display: none;"></video>
+        
+        <div class="links">
+            <p><strong>Free Web Tools (Recommended):</strong></p>
+            <ul>
+                <li><a href="https://joyfun.ai" target="_blank">JoyFun.ai</a> — No signup, video upload</li>
+                <li><a href="https://www.pixaryai.com" target="_blank">PixaryAI Undress Video</a> — Daily free credits</li>
+                <li><a href="https://undressai.tools" target="_blank">Undress AI Tools</a> — Short video support</li>
+            </ul>
+        </div>
     </div>
 
     <script>
@@ -51,9 +96,12 @@
             }
         });
 
-        dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
         dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
-        dropZone.addEventListener('drop', e => {
+        dropZone.addEventListener('drop', (e) => {
             e.preventDefault();
             dropZone.classList.remove('dragover');
             if (e.dataTransfer.files.length > 0) {
@@ -64,18 +112,15 @@
 
         async function processVideo() {
             if (!selectedFile) {
-                alert("Please select your video first");
+                alert("Please select a video first");
                 return;
             }
 
             const status = document.getElementById('status');
-            status.textContent = "Uploading...";
+            status.textContent = "Trying API...";
 
             const formData = new FormData();
             formData.append('video', selectedFile);
-            // Add common optional params from the API schema
-            formData.append('body_type', 'average'); 
-            // formData.append('age', 'adult'); // uncomment if needed
 
             try {
                 const response = await fetch('https://public-api.undresstool.fun/api/v1/video/undress', {
@@ -83,34 +128,24 @@
                     body: formData
                 });
 
-                const responseText = await response.text();
-                console.log("Raw response:", responseText);
+                if (!response.ok) throw new Error(`API Error ${response.status}`);
 
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${responseText}`);
-                }
-
-                let result;
-                try {
-                    result = JSON.parse(responseText);
-                } catch (e) {
-                    throw new Error("Invalid JSON response");
-                }
-
-                const videoUrl = result.output_url || result.video_url || result.url || result.data?.url;
+                const result = await response.json();
+                const videoUrl = result.output_url || result.video_url || result.url;
 
                 if (videoUrl) {
                     const output = document.getElementById('outputVideo');
                     output.src = videoUrl;
                     output.style.display = 'block';
-                    status.textContent = "✅ Success! Download the video.";
-                } else {
-                    throw new Error("No output URL. Check console (F12) for details.");
+                    status.textContent = "✅ Done!";
+                    return;
                 }
             } catch (error) {
                 console.error(error);
-                status.textContent = "❌ Failed: " + error.message + "\n\nThe API may require sign-up or have temporary issues. Try again later or use a web UI like JoyFun.ai / PixaryAI.";
             }
+
+            // Fallback message
+            status.textContent = "❌ API not responding right now.\n\nUse the free web tools above (JoyFun.ai works great for short clips).";
         }
     </script>
 </body>
